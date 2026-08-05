@@ -86,6 +86,12 @@ class SwarmSim:
         first = np.asarray(keyframes[0].offsets, dtype=float)
         if first.ndim != 2 or first.shape[1] != 3:
             raise ValueError("keyframe offsets must have shape (n, 3)")
+        for prev_kf, kf in zip(keyframes, keyframes[1:]):
+            if kf.t_start < prev_kf.t_start + prev_kf.t_blend:
+                raise ValueError(
+                    "keyframe blend windows must not overlap: a keyframe may only start "
+                    "after the previous blend has finished"
+                )
         self.params = params
         self.leader = leader
         self.keyframes = list(keyframes)

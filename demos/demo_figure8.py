@@ -1,9 +1,11 @@
 """Figure-eight (lemniscate) demo.
 
 Two laps of a Gerono lemniscate with ~1.2 m half-width sampled into waypoints,
-flown as a minimum-snap trajectory with avg_speed = 2.5 m/s and
-yaw_mode="velocity" (nose follows the direction of travel). Reports RMS
-tracking error (target 0.10 m) and peak speed. Outputs: figure8_3d.png,
+flown as a minimum-snap trajectory (peaking around 2.5 m/s through the fast
+sections; the dense waypoint sampling and the 0.5 s minimum segment time put
+the whole-lap average near 0.9 m/s) with yaw_mode="velocity" (nose follows the
+direction of travel). Reports RMS tracking error (target 0.10 m) and peak
+speed. Outputs: figure8_3d.png,
 figure8_tracking.png, figure8.gif.
 """
 

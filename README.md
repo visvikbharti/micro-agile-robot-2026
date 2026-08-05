@@ -54,7 +54,7 @@ Run your first flight:
 Each demo prints its metrics as `name: value` lines, ends with `PASS` (or `WARN` with a
 reason), and writes its plots and GIFs into `out/`. Useful flags for every demo:
 
-- `--fast` — roughly quarter-length run, skips the GIF (great for a first look)
+- `--fast` — shortened run (one-half to one-third length), skips the GIF (great for a first look)
 - `--no-gif` — full run, but skip the (slow) GIF rendering
 - `--show` — open interactive matplotlib windows instead of headless rendering
 - `--out DIR` — write outputs somewhere other than `out/`
@@ -65,7 +65,7 @@ reason), and writes its plots and GIFs into `out/`. Useful flags for every demo:
 | --- | --- | --- | --- |
 | `demos/demo_hover.py` | Recovery to a hover setpoint from a 0.4 m offset, 6 s | settle to < 2 cm; steady-state RMS < 0.005 m | hover tracking plot |
 | `demos/demo_minsnap.py` | Minimum-snap obstacle course threading two gates and skirting a box at 2 m/s average | RMS tracking < 0.08 m, max < 0.20 m | `minsnap_3d.png`, `minsnap_tracking.png`, `minsnap_course.gif` |
-| `demos/demo_figure8.py` | Two laps of a figure-eight (~1.2 m half-width) at 2.5 m/s average, yaw following velocity | RMS tracking < 0.10 m | `figure8_3d.png`, `figure8_tracking.png`, `figure8.gif` |
+| `demos/demo_figure8.py` | Two laps of a figure-eight (~1.2 m half-width), peaking near 2.5 m/s, yaw following velocity | RMS tracking < 0.10 m | `figure8_3d.png`, `figure8_tracking.png`, `figure8.gif` |
 | `demos/demo_swarm.py` | Nine robots (a nod to the talk's finale): 3x3 grid → ring → "V", then a circle lap in formation | formation RMS < 0.06 m; min pairwise distance > 0.15 m | `swarm_3d.png`, `swarm.gif` |
 
 The numbers above are the *targets* each demo checks itself against; run the demos to see

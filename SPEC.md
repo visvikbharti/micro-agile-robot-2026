@@ -278,7 +278,7 @@ Common structure for every demo:
 - `sys.path` does NOT need patching (package is pip-installed editable).
 - `matplotlib.use("Agg")` unless `--show` is passed (set backend BEFORE importing pyplot).
 - `main(argv=None)` + argparse flags: `--out` (default `out/` under the project root),
-  `--fast` (roughly quarter-length run, skip GIF), `--no-gif`, `--show`.
+  `--fast` (shortened run, roughly one-half to one-third length, skip GIF), `--no-gif`, `--show`.
 - Print metrics as `name: value` lines; print `PASS` or `WARN <reason>` at the end; exit with
   code 1 only on gross failure (error > 5x target), else 0.
 - Keep full-run wall time under ~90 s each; GIFs <= 400 frames.
