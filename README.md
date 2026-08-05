@@ -4,6 +4,24 @@ A self-contained Python simulation of agile micro-quadrotors in the style of Vij
 GRASP Lab at UPenn, inspired by the TED talk
 ["Robots that fly ... and cooperate"](https://www.youtube.com/watch?v=4ErEBkj_3PY).
 
+<p align="center">
+  <img src="media/swarm.gif" width="640"
+       alt="Nine simulated quadrotors morphing between grid, ring, and V formations" />
+  <br/>
+  <em>Nine robots: grid &rarr; ring &rarr; V &rarr; circling in formation
+  (formation error &lt; 0.3&nbsp;mm, from <code>demos/demo_swarm.py</code>)</em>
+</p>
+
+<p align="center">
+  <img src="media/minsnap_course.gif" width="420"
+       alt="A quadrotor threading two gates on a minimum-snap trajectory" />
+  <img src="media/figure8.gif" width="420"
+       alt="A quadrotor flying a figure-eight with velocity-aligned yaw" />
+  <br/>
+  <em>Minimum-snap gate course at 4.1&nbsp;m/s peak (left) and a figure-eight with
+  velocity-aligned yaw (right)</em>
+</p>
+
 Everything you see in that talk — a palm-sized quadrotor snapping through hoops, tracing
 figure-eights, and nine robots morphing between formations — rests on three ideas:
 minimum-snap trajectories, geometric SE(3) control, and optimal goal assignment for swarms.
