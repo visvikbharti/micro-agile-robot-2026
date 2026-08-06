@@ -1,0 +1,111 @@
+"""First flight: connect to a Crazyflie, arm, take off, hover, land.
+
+Sequence: connect -> reset estimator -> arm -> take off to --height (default
+0.5 m) -> hold for --hold seconds (default 5 s) -> land. Uses the high-level
+commander.
+
+``--dry-run`` prints the flight plan and exits 0 without importing cflib, so it
+works with no radio, no Crazyflie, and even no cflib installed.
+
+Examples:
+    python flight/fly_hover.py --dry-run
+    python flight/fly_hover.py --uri radio://0/80/2M/E7E7E7E7E7 --height 0.5
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+
+DEFAULT_URI = "radio://0/80/2M/E7E7E7E7E7"
+
+
+def _wait_for_position_estimator(scf):
+    """Block until the Kalman position variance settles (standard cflib pattern)."""
+    from cflib.crazyflie.log import LogConfig
+    from cflib.crazyflie.syncLogger import SyncLogger
+
+    print("Waiting for estimator to converge...")
+    log_config = LogConfig(name="Kalman Variance", period_in_ms=500)
+    log_config.add_variable("kalman.varPX", "float")
+    log_config.add_variable("kalman.varPY", "float")
+    log_config.add_variable("kalman.varPZ", "float")
+    var_hist = {k: [1000.0] * 10 for k in ("kalman.varPX", "kalman.varPY", "kalman.varPZ")}
+    threshold = 0.001
+    with SyncLogger(scf, log_config) as logger:
+        for _, data, _ in logger:
+            ok = True
+            for name, hist in var_hist.items():
+                hist.append(data[name])
+                hist.pop(0)
+                if max(hist) - min(hist) > threshold:
+                    ok = False
+            if ok:
+                print("Estimator converged.")
+                return
+
+
+def reset_estimator(scf):
+    """Reset the Kalman estimator and wait for it to converge."""
+    scf.cf.param.set_value("kalman.resetEstimation", "1")
+    time.sleep(0.1)
+    scf.cf.param.set_value("kalman.resetEstimation", "0")
+    _wait_for_position_estimator(scf)
+
+
+def fly(args):
+    """Connect and hover. Requires cflib, a Crazyradio, and a Crazyflie."""
+    import cflib.crtp
+    from cflib.crazyflie import Crazyflie
+    from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
+
+    cflib.crtp.init_drivers()
+    print("Connecting to %s ..." % args.uri)
+    with SyncCrazyflie(args.uri, cf=Crazyflie()) as scf:
+        cf = scf.cf
+        cf.param.set_value("commander.enHighLevel", "1")
+        reset_estimator(scf)
+
+        print("Arming...")
+        cf.platform.send_arming_request(True)
+        time.sleep(1.0)
+
+        commander = cf.high_level_commander
+        print("Takeoff to %.2f m" % args.height)
+        commander.takeoff(args.height, 2.0)
+        time.sleep(2.5)
+
+        print("Holding for %.1f s" % args.hold)
+        time.sleep(args.hold)
+
+        print("Landing")
+        commander.land(0.0, 2.0)
+        time.sleep(2.5)
+        commander.stop()
+    print("Done.")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="First flight: take off, hover, land (high-level commander).")
+    parser.add_argument("--uri", default=DEFAULT_URI, help="Crazyflie URI")
+    parser.add_argument("--height", type=float, default=0.5,
+                        help="hover height in meters")
+    parser.add_argument("--hold", type=float, default=5.0,
+                        help="hover hold time in seconds")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="print the flight plan and exit (no cflib, no hardware)")
+    args = parser.parse_args(argv)
+
+    print("Flight plan: connect %s -> reset estimator -> arm -> takeoff %.2f m "
+          "-> hold %.1f s -> land" % (args.uri, args.height, args.hold))
+    if args.dry_run:
+        print("Dry run: not connecting to a Crazyflie.")
+        return 0
+    fly(args)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
