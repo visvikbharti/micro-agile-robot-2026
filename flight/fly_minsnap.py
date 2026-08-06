@@ -6,6 +6,16 @@ trajectory memory and flies it: takeoff -> go to trajectory start ->
 start_trajectory -> land. Follows the cflib ``autonomous_sequence_high_level``
 example pattern.
 
+``--log PATH`` streams ``stateEstimate.x/y/z`` + ``pm.vbat`` at 50 Hz to an
+``analyze_log.py``-ready CSV during the flight (``flight/flightlog.py``);
+``--save-ref PATH`` writes the exact poly4d rows being flown (works in
+``--dry-run`` too), so ``analyze_log.py --ref`` scores the very trajectory the
+firmware evaluated.
+
+Ctrl-C during the flight is caught and runs the normal land + stop sequence —
+it is the controlled abort. The hard kill (motors off, vehicle falls) is
+``flight/estop.py`` in a second terminal.
+
 ``--dry-run`` validates the rows (row width, positive durations, sane peak
 velocity/accel), prints the segment table and total duration, and exits 0
 without importing cflib, so it works with no radio, no Crazyflie, and even no
@@ -16,6 +26,7 @@ Examples:
     python flight/fly_minsnap.py --preset square --height 0.6 --dry-run
     python flight/fly_minsnap.py --csv out/traj.csv --dry-run
     python flight/fly_minsnap.py --uri radio://0/80/2M/E7E7E7E7E7
+    python flight/fly_minsnap.py --save-ref out/ref.csv --log out/ft21_log.csv
 """
 
 from __future__ import annotations
@@ -29,6 +40,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cf_trajectory  # noqa: E402
+import flightlog  # noqa: E402
 
 DEFAULT_URI = "radio://0/80/2M/E7E7E7E7E7"
 TRAJECTORY_ID = 1
@@ -167,29 +179,39 @@ def fly(args, rows):
         duration = upload_trajectory(cf, TRAJECTORY_ID, rows)
         print("Trajectory uploaded, duration %.2f s" % duration)
 
-        print("Arming...")
-        cf.platform.send_arming_request(True)
-        time.sleep(1.0)
+        logger = flightlog.CsvFlightLogger(scf, args.log) if args.log else None
+        if logger is not None:
+            logger.start()
+        try:
+            print("Arming...")
+            cf.platform.send_arming_request(True)
+            time.sleep(1.0)
 
-        commander = cf.high_level_commander
-        start_pos, start_yaw = cf_trajectory.evaluate_poly4d(rows, 0.0)
+            commander = cf.high_level_commander
+            start_pos, start_yaw = cf_trajectory.evaluate_poly4d(rows, 0.0)
 
-        print("Takeoff to %.2f m" % args.height)
-        commander.takeoff(args.height, 2.0)
-        time.sleep(3.0)
+            try:
+                print("Takeoff to %.2f m" % args.height)
+                commander.takeoff(args.height, 2.0)
+                time.sleep(3.0)
 
-        print("Moving to trajectory start (%.2f, %.2f, %.2f)" % tuple(start_pos))
-        commander.go_to(start_pos[0], start_pos[1], start_pos[2], start_yaw, 2.0)
-        time.sleep(2.5)
+                print("Moving to trajectory start (%.2f, %.2f, %.2f)" % tuple(start_pos))
+                commander.go_to(start_pos[0], start_pos[1], start_pos[2], start_yaw, 2.0)
+                time.sleep(2.5)
 
-        print("Starting trajectory")
-        commander.start_trajectory(TRAJECTORY_ID, time_scale=1.0, relative=False)
-        time.sleep(duration + 0.5)
+                print("Starting trajectory")
+                commander.start_trajectory(TRAJECTORY_ID, time_scale=1.0, relative=False)
+                time.sleep(duration + 0.5)
+            except KeyboardInterrupt:
+                print("\nCtrl-C: aborting — landing")
 
-        print("Landing")
-        commander.land(0.0, 2.0)
-        time.sleep(2.5)
-        commander.stop()
+            print("Landing")
+            commander.land(0.0, 2.0)
+            time.sleep(2.5)
+            commander.stop()
+        finally:
+            if logger is not None:
+                logger.stop()
     print("Done.")
 
 
@@ -205,6 +227,12 @@ def main(argv=None):
                         help="flight height in meters for the preset waypoints")
     parser.add_argument("--speed", type=float, default=0.5,
                         help="average speed in m/s used for segment timing")
+    parser.add_argument("--log", default=None, metavar="PATH",
+                        help="write a t,x,y,z,vbat CSV (analyze_log.py format) "
+                             "during the flight")
+    parser.add_argument("--save-ref", default=None, metavar="PATH",
+                        help="save the flown poly4d rows to this CSV "
+                             "(for analyze_log.py --ref; works with --dry-run)")
     parser.add_argument("--dry-run", action="store_true",
                         help="print the segment table and exit (no cflib, no hardware)")
     args = parser.parse_args(argv)
@@ -218,6 +246,16 @@ def main(argv=None):
     print_segment_table(rows, source)
     print("Peak speed %.2f m/s, peak accel %.2f m/s^2 (limits %.1f, %.1f)"
           % (peak_v, peak_a, cf_trajectory.MAX_SPEED, cf_trajectory.MAX_ACCEL))
+    if args.save_ref:
+        parent = os.path.dirname(args.save_ref)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        cf_trajectory.save_csv(rows, args.save_ref)
+        print("Saved flown poly4d reference to %s (use with analyze_log.py --ref)"
+              % args.save_ref)
+    if args.log:
+        print("Logging t,x,y,z,vbat at 50 Hz to %s (analyze_log.py format)" % args.log)
+    print("Ctrl-C during flight commands the normal landing sequence.")
     if args.dry_run:
         print("Dry run: not connecting to a Crazyflie.")
         return 0

@@ -143,8 +143,22 @@ quadsim/            core library
   swarm.py          formation keyframes, optimal assignment, collision avoidance
   viz.py            3D trajectory plots, tracking panels, GIF animation
 demos/              four runnable demos (write into out/)
+flight/             sim-to-hardware bridge: poly4d trajectory export, preflight checks,
+                    Crazyflie flight scripts, and flight-log analysis
+hardware/           parametric OpenSCAD frame (frame.scad), rendered frame.stl,
+                    and the dimensioned-drawing generator (drawing.py)
+docs/               design and learning documentation
+  ARCHITECTURE.md   system overview, control design of record, decision log (ADRs)
+  DESIGN.md         physical design of the 33 g twin: airframe, propulsion, weight budget,
+                    sim-to-real deltas
+  FLIGHT_TEST_PLAN.md  gated Crazyflie flight-test campaign (FT-0..FT-4) for a solo operator
+  ESTIMATION.md     state estimation and sensing design for the Flow-deck platform
+  HARDWARE.md       sim-to-real roadmap (Crazyflie levels 0-3)
+  LEARNING.md       ECE-to-aerial-robotics learning path anchored to this codebase
+  SOURCING_INDIA.md where to buy everything from Delhi/India, plus the drone rules
+  course/           eight-chapter self-study course and the combined Word workbook
+media/              committed copies of gitignored out/ artifacts (demo GIFs, frame drawing)
 tests/              pytest suite (maths, dynamics, trajectory, controller, swarm)
-docs/HARDWARE.md    sim-to-real roadmap (Crazyflie levels 0-3)
 SPEC.md             the binding interface contract the modules are written against
 ```
 
@@ -168,3 +182,9 @@ Simulated trajectories are nice; a real 33 g robot flying them across your desk 
 Crazyflie with a Flow deck flying these very trajectories, to Lighthouse positioning, to a
 small Crazyswarm2 swarm — including a module-by-module mapping from this codebase to the
 real stack, approximate prices, and safety notes.
+
+**Binding decision (2026-08-06): the goal is autonomous flight, on a Crazyflie 2.1+ with
+Flow deck v2 (Path A).** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) holds the whole
+picture (and the decision log); [`docs/FLIGHT_TEST_PLAN.md`](docs/FLIGHT_TEST_PLAN.md) is
+the gated flight-test campaign that takes that vehicle from bench checks to a measured
+speed-vs-error envelope.

@@ -4,19 +4,31 @@ Sequence: connect -> reset estimator -> arm -> take off to --height (default
 0.5 m) -> hold for --hold seconds (default 5 s) -> land. Uses the high-level
 commander.
 
+``--log PATH`` streams ``stateEstimate.x/y/z`` + ``pm.vbat`` at 50 Hz to an
+``analyze_log.py``-ready CSV during the flight (``flight/flightlog.py``).
+
+Ctrl-C during the flight is caught and runs the normal land + stop sequence —
+it is the controlled abort. The hard kill (motors off, vehicle falls) is
+``flight/estop.py`` in a second terminal.
+
 ``--dry-run`` prints the flight plan and exits 0 without importing cflib, so it
 works with no radio, no Crazyflie, and even no cflib installed.
 
 Examples:
     python flight/fly_hover.py --dry-run
     python flight/fly_hover.py --uri radio://0/80/2M/E7E7E7E7E7 --height 0.5
+    python flight/fly_hover.py --hold 30 --log out/ft12_log.csv
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import flightlog  # noqa: E402
 
 DEFAULT_URI = "radio://0/80/2M/E7E7E7E7E7"
 
@@ -67,22 +79,32 @@ def fly(args):
         cf.param.set_value("commander.enHighLevel", "1")
         reset_estimator(scf)
 
-        print("Arming...")
-        cf.platform.send_arming_request(True)
-        time.sleep(1.0)
+        logger = flightlog.CsvFlightLogger(scf, args.log) if args.log else None
+        if logger is not None:
+            logger.start()
+        try:
+            print("Arming...")
+            cf.platform.send_arming_request(True)
+            time.sleep(1.0)
 
-        commander = cf.high_level_commander
-        print("Takeoff to %.2f m" % args.height)
-        commander.takeoff(args.height, 2.0)
-        time.sleep(2.5)
+            commander = cf.high_level_commander
+            try:
+                print("Takeoff to %.2f m" % args.height)
+                commander.takeoff(args.height, 2.0)
+                time.sleep(2.5)
 
-        print("Holding for %.1f s" % args.hold)
-        time.sleep(args.hold)
+                print("Holding for %.1f s" % args.hold)
+                time.sleep(args.hold)
+            except KeyboardInterrupt:
+                print("\nCtrl-C: aborting — landing")
 
-        print("Landing")
-        commander.land(0.0, 2.0)
-        time.sleep(2.5)
-        commander.stop()
+            print("Landing")
+            commander.land(0.0, 2.0)
+            time.sleep(2.5)
+            commander.stop()
+        finally:
+            if logger is not None:
+                logger.stop()
     print("Done.")
 
 
@@ -94,12 +116,18 @@ def main(argv=None):
                         help="hover height in meters")
     parser.add_argument("--hold", type=float, default=5.0,
                         help="hover hold time in seconds")
+    parser.add_argument("--log", default=None, metavar="PATH",
+                        help="write a t,x,y,z,vbat CSV (analyze_log.py format) "
+                             "during the flight")
     parser.add_argument("--dry-run", action="store_true",
                         help="print the flight plan and exit (no cflib, no hardware)")
     args = parser.parse_args(argv)
 
     print("Flight plan: connect %s -> reset estimator -> arm -> takeoff %.2f m "
           "-> hold %.1f s -> land" % (args.uri, args.height, args.hold))
+    if args.log:
+        print("Logging t,x,y,z,vbat at 50 Hz to %s (analyze_log.py format)" % args.log)
+    print("Ctrl-C during flight commands the normal landing sequence.")
     if args.dry_run:
         print("Dry run: not connecting to a Crazyflie.")
         return 0

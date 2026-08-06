@@ -16,9 +16,12 @@ controller as our `quadsim/controller.py`. Options, best first:
 | [Bitcraze store](https://store.bitcraze.io/products/crazyflie-2-1) (Sweden) | Direct, ~USD 250 for the kit; add shipping + Indian customs duty (~30-40% landed markup). Reliable but slower. |
 | [RobotShop](https://www.robotshop.com/products/bitcraze-crazyflie-21) | International retailer, ships to India; compare landed cost with Bitcraze direct. |
 
-Add later: Flow deck v2 (position hold) and Crazyradio — both via the same channels.
+Flow deck v2 (position hold) and Crazyradio come via the same channels — and per the
+2026-08-06 autonomy decision (`docs/ARCHITECTURE.md` ADR-005) they are day-one items, not
+add-laters: without the Flow deck there is no position estimate, and without the Crazyradio
+there is no scripted flight.
 
-### Path B — DIY whoop-class build (the 3D-printed frame in `hardware/`)
+### Path B — DIY whoop-class build (secondary, manual-flight track — the 3D-printed frame in `hardware/`)
 
 Total ballpark for a first build: **₹6,000–12,000** (excluding a radio transmitter), per
 [Zbotic's India whoop guide](https://zbotic.in/whoop-drone-for-indoor-fpv-best-tiny-whoops-in-india-2026/).
@@ -59,7 +62,44 @@ VIP areas) — but **indoor flying is unregulated**, and indoors-with-netting is
 Kumar's lab flies in the video. Plan: fly indoors; check the
 [Digital Sky map](https://digitalsky.dgca.gov.in) before any outdoor flight.
 
-## Suggested first order (Path B, minimal)
+## Suggested first order (Path A — the chosen autonomy platform)
+
+Per the binding 2026-08-06 decision (`docs/ARCHITECTURE.md` ADR-005), this is the order
+that starts the `docs/FLIGHT_TEST_PLAN.md` campaign:
+
+1. **Crazyflie 2.1+ kit** — mandatory day one
+2. **Flow deck v2** — mandatory day one (the position estimate; nothing autonomous flies
+   without it)
+3. **Crazyradio** — mandatory day one (the scripted-flight link; `cflib` needs it)
+4. 2–3 spare 250 mAh packs + a multi-port 1S charger (the flight-test plan's battery
+   discipline — take off ≥ 3.9 V resting for test sessions, land by 3.2 V under load —
+   chews through packs fast in a session)
+5. ≥ 2 sets of spare props (bent props get replaced immediately, per the plan's §2.5)
+6. Spare motors — optional on the first order; add them once FT-4.1 tells you your real
+   flight-hour burn rate
+7. **Second Crazyradio — recommended for a solo operator**: one dongle serves one
+   process, so with a single radio the `flight/estop.py` panic button can only fire
+   after the flight script is killed and releases it; a second dongle makes the
+   emergency stop instant and independent (`docs/FLIGHT_TEST_PLAN.md` §2.6 layer 2)
+
+**Landed cost, Fab.to.Lab vs Bitcraze direct** (estimates — all prices approximate, verify
+against live listings):
+
+- *Bitcraze direct (Sweden)*: the `docs/HARDWARE.md` Level-1 package is ~USD 250
+  (Crazyflie 2.1+) + ~$65 (Flow deck v2) + ~$45 (Crazyradio) + ~$25 spares ≈ **$360–400**
+  before shipping; with the ~30–40 % landed markup for shipping + Indian customs duty
+  documented above, estimate **≈ $470–560 landed** — convert at the day's USD→INR rate
+  when you order (neither this doc nor `docs/HARDWARE.md` commits an exchange rate, so no
+  INR figure here would be honest).
+- *Fab.to.Lab (Indian distributor)*: INR pricing with no customs or import hassle, which
+  is exactly the 30–40 % markup you avoid — likely the cheaper *and* faster route when in
+  stock. Their INR list prices are not recorded in this repo; check the current listing.
+
+Lead times: confirm with the vendor before ordering — Fab.to.Lab stock comes and goes
+(email them if listed out of stock, as noted above), and Bitcraze-direct adds
+international shipping plus customs clearance time.
+
+## Suggested first order (Path B — secondary/manual track, minimal)
 
 1. 8× 7×16 motors (4 + 4 spares — coreless motors are consumables), with props
 2. 1× brushed 1S AIO FC (or a donor BNF whoop)

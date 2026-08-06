@@ -37,3 +37,17 @@ The complete course â€” all eight chapters, one file, with a table of contents â
 markdown chapters with pandoc; the markdown files are the source of truth, so edit those and
 regenerate rather than editing the .docx directly. Use the .docx for offline reading, for
 printing, and as the place your homework answers go.
+
+### Regenerating the workbook
+
+Requires [pandoc](https://pandoc.org) (`brew install pandoc`). From this directory
+(`docs/course/`):
+
+```sh
+pandoc ch00-introduction.md ch01-rotations.md ch02-dynamics.md ch03-control.md \
+       ch04-trajectories.md ch05-swarms.md ch06-mechanical.md ch07-real-flight.md \
+       --toc --toc-depth=2 -o Quadrotor_Course.docx
+```
+
+Chapter order on the command line is the chapter order in the document; `--toc` builds the
+table of contents from the chapter headings.

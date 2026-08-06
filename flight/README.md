@@ -200,13 +200,42 @@ Then, hardware on the floor, area clear, hand near Ctrl-C:
 .venv/bin/python flight/fly_hover.py --uri radio://0/80/2M/E7E7E7E7E7 --height 0.5
 ```
 
-(Both scripts take `--uri`, `--height`, `--dry-run`; `fly_hover.py` adds `--hold` and
-`fly_minsnap.py` adds `--csv`, `--preset`, `--speed`. Run `--help` on each script for
-the authoritative list and defaults.)
+(Both scripts take `--uri`, `--height`, `--log`, `--dry-run`; `fly_hover.py` adds
+`--hold` and `fly_minsnap.py` adds `--csv`, `--preset`, `--speed`, `--save-ref`. Run
+`--help` on each script for the authoritative list and defaults.)
 
 Expect: takeoff, a hover holding ~0.5 m with centimeter-level wander, landing. Know
-your kill: Ctrl-C the script and be ready to catch/cushion; cflib exposes an emergency
-stop — learn what interruption does *on the ground* before trusting it in the air.
+your kills — there are two layers, and neither involves your hands:
+
+- **Soft abort — Ctrl-C commands a landing.** Both flight scripts catch Ctrl-C
+  during flight and run the normal land + stop sequence ("aborting — landing"), so
+  one keypress brings the vehicle down gently where it is.
+- **Hard kill — `flight/estop.py`.** The second-terminal panic button: it connects
+  and sends the cflib emergency stop (`cf.loc.send_emergency_stop()`) — motors off
+  instantly, the vehicle falls. Keep it open and pre-typed for every session:
+
+  ```sh
+  .venv/bin/python flight/estop.py --dry-run   # rehearse the plan, no hardware
+  .venv/bin/python flight/estop.py             # the real thing: motors off NOW
+  ```
+
+If the vehicle misbehaves, use these and **let it fall inside the net onto the soft
+floor — never hand-catch** (`docs/FLIGHT_TEST_PLAN.md` §2.3 netting, §2.6 emergency
+stop). Rehearse both layers on the ground with props off before the first flight —
+that's FT-0.6 in the flight-test plan.
+
+**Logging the flight** — add `--log` and the script streams `stateEstimate.x/y/z` +
+`pm.vbat` at 50 Hz (one log block, via `flight/flightlog.py`) into a `t,x,y,z,vbat`
+CSV with `t` in seconds — exactly what `flight/analyze_log.py` consumes:
+
+```sh
+.venv/bin/python flight/fly_hover.py --height 0.5 --hold 30 --log out/ft12_log.csv
+.venv/bin/python flight/analyze_log.py out/ft12_log.csv --hover 0 0 0.5 --t0 4.0
+```
+
+In-script logging exists because **cfclient cannot share the Crazyradio link with a
+running script** — the GUI's logging tab is only a fallback for manual sessions (and
+its CSV then needs the column renames described in `analyze_log.py`'s docstring).
 
 ### 5. Fly a minimum-snap course — `fly_minsnap.py`
 
@@ -265,6 +294,12 @@ The dry run validates the CSV (row width, positive durations, sane peak
 velocity/accel) and prints the plan without touching a radio. The real run takes off,
 uploads the segments, starts the trajectory, and lands.
 
+For a scorable flight, record both sides of the comparison in one go:
+`--save-ref out/course_ref.csv` writes the exact poly4d rows being flown (it works
+with `--dry-run` too), and `--log out/course_log.csv` records the flight; afterwards
+`analyze_log.py out/course_log.csv --ref out/course_ref.csv --t0 <seconds>` scores
+the very trajectory the firmware evaluated.
+
 To compare against the sim's controller rather than the stock PID: set the firmware
 parameter `stabilizer.controller` to the **Mellinger** controller (value 2 in current
 firmware) via cfclient's parameter tab — that puts `controller_mellinger.c`, the
@@ -294,16 +329,20 @@ fingerprints to watch for:
   because ~40 ms of loop latency is departure (ch07 Exp 2). The radio carries
   trajectories and logs, never the inner loop.
 
-Log it like the sim: configure cfclient log blocks for position/velocity/attitude
-setpoint-vs-estimate — the same signal set as `quadsim.sim.History` — and reuse your
-`plot_tracking` reading habits on real data. When hover throttle, mass, or tracking
-drift from the sim's predictions, push measured values back into `quadsim/params.py`:
-that's the twin staying a twin.
+Log it like the sim: fly with `--log` and score the CSV with `flight/analyze_log.py`
+(same RMS convention as `quadsim.sim.History.rms_pos_error`). For richer signal sets
+— velocity, attitude, setpoint-vs-estimate — use cfclient log blocks in a *separate,
+manual* session and reuse your `plot_tracking` reading habits on real data; remember
+cfclient and a flight script cannot share the one radio link. When hover throttle,
+mass, or tracking drift from the sim's predictions, push measured values back into
+`quadsim/params.py`: that's the twin staying a twin.
 
 ### 7. Safety, always
 Props off for bench work; glasses close-up; replace bent props (vibration is in-band
 accelerometer noise — it wrecks the estimator before the frame). LiPo: charge attended,
 retire crashed/puffed packs, store ~50%. First flights low, slow, one vehicle, cushion
-underneath, and test the emergency stop on the ground (`docs/HARDWARE.md` safety
-section is binding). Indoors you set the rules; outdoors, Drone Rules 2021 apply —
+underneath, and drill both stop layers on the ground with props off — Ctrl-C-to-land
+and `flight/estop.py` — before the first takeoff (FT-0.6; `docs/HARDWARE.md` safety
+section is binding). Never hand-catch a misbehaving vehicle: let it fall into the
+net (`docs/FLIGHT_TEST_PLAN.md` §2.3/§2.6). Indoors you set the rules; outdoors, Drone Rules 2021 apply —
 nano class helps, red zones don't care (`docs/SOURCING_INDIA.md`).
