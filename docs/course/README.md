@@ -31,6 +31,7 @@ table of contents and is meant to travel with you when you're away from the repo
 | 7 | The real flight stack: where ECE comes home | IMU estimation with complementary/Kalman filters, latency and bias effects, and the Crazyflie path to real flight. | [ch07-real-flight.md](ch07-real-flight.md) |
 | 8 | Decentralized swarms: nobody in charge, everybody with the plan | Kumar's pairwise-error law as Laplacian consensus, sensing-graph connectivity vs dropout, and implicit coordination via a shared plan. | [ch08-decentralized-swarms.md](ch08-decentralized-swarms.md) |
 | 9 | Your own firmware: our controller on the real robot | The crazyflie-firmware extension points, the `controller.py` → `controller_mellinger.c` map, a golden-vector-validated C port, and the gates back to FT-1.1. | [ch09-own-firmware.md](ch09-own-firmware.md) |
+| A | Appendix — Reading the plots | The five-check habit for every tracking figure, sim or real: reference vs actual, damping, settle time vs prediction, saturation, physics audit. | [appendix-reading-plots.md](appendix-reading-plots.md) |
 
 ## The Word document
 
@@ -48,7 +49,7 @@ Requires [pandoc](https://pandoc.org) (`brew install pandoc`). From this directo
 ```sh
 pandoc ch00-introduction.md ch01-rotations.md ch02-dynamics.md ch03-control.md \
        ch04-trajectories.md ch05-swarms.md ch06-mechanical.md ch07-real-flight.md \
-       ch08-decentralized-swarms.md ch09-own-firmware.md \
+       ch08-decentralized-swarms.md ch09-own-firmware.md appendix-reading-plots.md \
        --toc --toc-depth=2 -o Quadrotor_Course.docx
 ```
 
