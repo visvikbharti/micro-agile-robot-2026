@@ -33,8 +33,29 @@ Total ballpark for a first build: **₹6,000–12,000** (excluding a radio trans
 | Brushed 1S AIO flight controller (F4, integrated ESCs + RX) | [Zbotic](https://zbotic.in/whoop-drone-for-indoor-fpv-best-tiny-whoops-in-india-2026/), QuadKart, Robu.in — look for "BetaFPV F4 1S brushed" / "Happymodel Beecore"-class boards | ₹1,500–3,000 |
 | 1S LiPo/LiHV 260–350 mAh (PH2.0 connector) ×3 | Robu.in, Zbotic, QuadKart | ₹250–500 each |
 | 1S USB charger (multi-port) | Same stores | ₹500–1,000 |
-| Frame | **You print it**: `hardware/frame.stl` (~6 g of PLA, ≈₹10 of filament). No printer? Delhi has many 3D-printing services — search "3D printing service Delhi", or use a college makerspace/fab lab. | ₹100–300 printed |
+| Frame | **You print it**: `hardware/frame.stl` (~6 g of PLA, ≈₹10 of filament). No printer? See "Printing the frame in Delhi" below. | ₹150–500 printed |
 | M2 screws, strap, spares | [ElectronicsComp](https://www.electronicscomp.com) (Delhi-based), Robu.in | ₹200–400 |
+
+#### Printing the frame in Delhi (checked Aug 2026 — verify minimums at checkout)
+
+Upload `hardware/frame.stl`, specify: **PLA, 0.2 mm layers, 3 walls, 30% infill, no
+supports, flat side down** (full table: `hardware/README.md`). Order **two copies** —
+service minimums dominate the cost and a crash spare is the first thing you'll want.
+On receipt: check the four motor bores (≈7.1 mm; a 7 mm drill bit should slide in
+snugly), flatness, and the engraved rotor dots.
+
+- Online, ship to Delhi: [Zbotic](https://zbotic.in/product/online-3d-printing-service/)
+  (already our whoop-parts vendor — combine with the parts order),
+  [DWart Industries](https://dwartindustries.com/shop/additive-manufacturing/fdm-3d-printing-services/)
+  (₹199 minimum, best for a single small part),
+  [RoboThings](https://robothings.in/online-3d-printing-service-in-india/) (Delhi/NCR),
+  [iamRapid](https://iamrapid.com/3d-printing-services-in-delhi/) (1–2 day Delhi delivery).
+- Delhi walk-in: [SOCH3D](https://soch3d.com/3d-printing-service/delhi) (~₹200/hr; our
+  frame is a 35–55 min print), [ElectronifyIndia](https://www.electronifyindia.com/pages/3d-printing-services).
+- Cheapest: any college fab lab / friend's printer — ₹10 of filament.
+
+Print quality is unvetted — that is what the bore check is for, and why the frame is
+printed **before** any motors are ordered.
 
 A note on brushed AIO boards: the hobby market has largely moved to brushless whoops, so
 brushed FCs come and go from stock. Two good fallbacks: (a) buy a cheap brushed BNF whoop
