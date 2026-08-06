@@ -71,10 +71,10 @@ Requires OpenSCAD **2019.05 or newer** (uses `rotate_extrude(angle=...)` and
 if it is on your PATH):**
 
 ```sh
-/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD -o frame.stl hardware/frame.scad
+/Applications/OpenSCAD-2021.01.app/Contents/MacOS/OpenSCAD -o frame.stl hardware/frame.scad
 
 # with prop guards (bench/indoor tuning only — adds ~5 g):
-/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD -D prop_guards=true -o frame_guards.stl hardware/frame.scad
+/Applications/OpenSCAD-2021.01.app/Contents/MacOS/OpenSCAD -D prop_guards=true -o frame_guards.stl hardware/frame.scad
 ```
 
 A successful render prints the derived values (`ECHO:` lines: 65.0538 mm
