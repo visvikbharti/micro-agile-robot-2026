@@ -115,6 +115,36 @@ and one "explain it back" question at the end. Never move on while a module feel
   *our* minimum-snap trajectories via cflib.
 - **Check:** list the three biggest sim-to-real gaps and how each will show up in flight.
 
+## Module 8 — Decentralized swarms: relative sensing and consensus
+**Goal:** earn back part of Module 5's centralized confession — the same nine-robot show, corrected
+only from relative positions of neighbors within a sensing radius.
+- **Read:** `quadsim/decentralized.py` (the docstring is the information-model contract);
+  `docs/course/ch08-decentralized-swarms.md`; Turpin, Michael & Kumar 2011.
+- **Concept:** the pairwise error `e_ij = x_i − x_j − s_des` as Kumar's TED-slide law; why the
+  leader position cancels out of it (differential signaling — common-mode rejection); mean-of-
+  neighbors correction as Laplacian consensus (gossip protocols, distributed clock sync); sensing-
+  graph connectivity as the convergence condition (a partitioned network cannot agree); implicit
+  coordination — everyone carries the same plan, so nobody needs to talk.
+- **Do:** run `demos/demo_decentralized.py` and compare the three metric blocks — centralized,
+  decentralized, 30% sensing dropout — and explain why they agree so closely.
+- **Break:** shrink `R_SENSE` until the sensing graph disconnects and watch what the shape error
+  does; then raise `k_form` and watch the undamped relative spring ring.
+- **Check:** which one error mode can the pairwise terms never see, and which loop kills it?
+
+## Module 9 — Your own firmware (the final exam)
+**Goal:** the roadmap for putting *our* controller — our gains, our attitude-error convention — into
+the Crazyflie's 500 Hz stabilizer loop, walked as far as a laptop allows.
+- **Read:** `docs/course/ch09-own-firmware.md`; the crazyflie-firmware controller interface header
+  (`src/modules/interface/controller.h`) and `controller_mellinger.c` in today's source tree.
+- **Concept:** pluggable controllers and out-of-tree builds (implementing a callback against a
+  vendor HAL); float-only, no-malloc discipline on the STM32F405's M4F FPU; golden test vectors
+  (HDL testbench thinking); the four validation gates between "it compiles" and "it flies", and
+  re-entry at FT-1.1 for any custom firmware.
+- **Do:** export golden vectors from `quadsim/controller.py`, compile the C port on your laptop,
+  and diff its outputs against Python — no hardware needed (ch09 Experiments 1–3).
+- **Check:** name the two structural differences between our controller and
+  `controller_mellinger.c` you must verify before trusting the mapping table.
+
 ---
 
 ## References (read in this order)

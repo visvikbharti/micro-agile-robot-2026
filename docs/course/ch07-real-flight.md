@@ -267,3 +267,7 @@ Observe: gyro alone drifts to ~39° RMS; accel alone jitters at ~2.9°; the fusi
 2. **Mueller, Hamer & D'Andrea, "Fusing ultra-wideband range measurements with accelerometers and rate gyroscopes for quadrocopter state estimation," ICRA 2015** — the lineage of the EKF the Crazyflie flies; Kalman applied, with Chapter 2's dynamics as the process model.
 3. **The crazyflie-firmware source** (github.com/bitcraze/crazyflie-firmware) — `controller_mellinger.c`, the EKF in `kalman_core`, the trajectory player: this repo in C, free to read before you spend a rupee.
 4. **Bitcraze's "Getting started" and cflib guides** (bitcraze.io) — the exact Level-1 bring-up path, including the motor-test and radio-setup rituals the safety section assumes.
+
+---
+
+*[Course index](README.md) · Next: [Chapter 8 — Decentralized swarms](ch08-decentralized-swarms.md) →*

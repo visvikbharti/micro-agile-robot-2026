@@ -176,7 +176,7 @@ project doc.)
 | [`docs/HARDWARE.md`](HARDWARE.md) | Sim-to-real roadmap, Levels 0–3 (Crazyflie, Flow deck, Lighthouse, Crazyswarm2), prices, safety | When deciding what to buy next; safety section is binding |
 | [`docs/SOURCING_INDIA.md`](SOURCING_INDIA.md) | Where to buy everything from Delhi: Indian distributors, INR ballparks, Drone Rules 2021 context | When ordering parts |
 | [`docs/LEARNING.md`](LEARNING.md) | The learning method (read–run–break–explain) and module-by-module session plan mapped to ECE background | At the start of the learning journey; the course below is its full expansion |
-| [`docs/course/README.md`](course/README.md) | Course index: how to use the 8 chapters + the Word workbook | Entry point to the course |
+| [`docs/course/README.md`](course/README.md) | Course index: how to use the 10 chapters + the Word workbook | Entry point to the course |
 | [`docs/course/ch00-introduction.md`](course/ch00-introduction.md) | Why small robots are agile; repo tour; running tests and demos | Course start |
 | [`docs/course/ch01-rotations.md`](course/ch01-rotations.md) | Quaternions and SO(3) (`maths.py`) | Before reading any attitude code |
 | [`docs/course/ch02-dynamics.md`](course/ch02-dynamics.md) | 13-state model, mixer matrix, inertia scaling (`dynamics.py`) | Before touching dynamics or the mixer |
@@ -185,6 +185,8 @@ project doc.)
 | [`docs/course/ch05-swarms.md`](course/ch05-swarms.md) | Formations, Hungarian assignment, avoidance (`swarm.py`) | Before swarm work (Level 3 prep) |
 | [`docs/course/ch06-mechanical.md`](course/ch06-mechanical.md) | Parametric CAD from `params.py`, design-for-printing (`frame.scad`) | Before editing the frame |
 | [`docs/course/ch07-real-flight.md`](course/ch07-real-flight.md) | Estimation, latency, bias — quantified sim-to-real effects | Before first Crazyflie flight; referenced throughout `flight/README.md` |
+| [`docs/course/ch08-decentralized-swarms.md`](course/ch08-decentralized-swarms.md) | Decentralized formation control: relative sensing, consensus, connectivity (`decentralized.py`) | Before decentralized-swarm work; honest about what stays centralized |
+| [`docs/course/ch09-own-firmware.md`](course/ch09-own-firmware.md) | Roadmap for porting `controller.py` into crazyflie-firmware: extension points, C port, validation gates | Before writing any custom firmware; re-entry at FT-1.1 |
 | [`docs/FLIGHT_TEST_PLAN.md`](FLIGHT_TEST_PLAN.md) | **The FT-ID authority**: gated Crazyflie flight-test campaign — every FT-x.y card, procedure, and pass/fail number | Before and during every flight session; the arbiter for any FT ID or pass bar |
 | [`docs/ESTIMATION.md`](ESTIMATION.md) | State-estimation design: sensor suite, onboard EKF, operating envelope, expected (non-binding) error bands | Before first Crazyflie flight; when classifying an estimation anomaly |
 | [`flight/README.md`](../flight/README.md) | Flight-code guide: Path A vs B, Betaflight checklist, Crazyflie quickstart, poly4d export pipeline | Bench sessions and every flight day |
@@ -333,7 +335,16 @@ Honest list, in the spirit of `docs/DESIGN.md` §9:
   Level 1 as reduced-speed *characterization* (`docs/FLIGHT_TEST_PLAN.md` FT-3); the
   full-speed sim-envelope flights are deferred to Level 2 (Lighthouse) and carry no
   FT ID. Real-swarm verification of the swarm requirements has no FT IDs yet and needs
-  the ROS 2 stack (`docs/HARDWARE.md` Levels 2–3).
+  the ROS 2 stack (`docs/HARDWARE.md` Levels 2–3). The decentralized-swarm *sim* gap,
+  however, is now implemented: `quadsim/decentralized.py` (ch08) flies the nine-robot
+  scenario on relative positions of sensed neighbors only — though slot assignment,
+  plan distribution, and ground-truth relative sensing remain centralized conveniences,
+  as the module docstring and ch08's honesty section say outright.
+- **The firmware port is roadmapped (ch09), not done.** Ch09 maps `controller.py` onto
+  `controller_mellinger.c` term by term and walks a golden-vector-validated C port
+  through its laptop-side gates, but no firmware code is committed in this repo and
+  nothing custom has been flashed. When it is built, the campaign re-enters at FT-1.1
+  (`docs/FLIGHT_TEST_PLAN.md`) like any other engineering change.
 - **Velocity-aligned yaw is exported but deliberately not flown.** `cf_trajectory.py`
   *does* export `yaw_mode="velocity"` trajectories — a per-segment least-squares
   polynomial fit (per-segment fit-acceptance tolerance 5e-3 rad; round-trip verified

@@ -85,6 +85,7 @@ reason), and writes its plots and GIFs into `out/`. Useful flags for every demo:
 | `demos/demo_minsnap.py` | Minimum-snap obstacle course threading two gates and skirting a box at 2 m/s average | RMS tracking < 0.08 m, max < 0.20 m | `minsnap_3d.png`, `minsnap_tracking.png`, `minsnap_course.gif` |
 | `demos/demo_figure8.py` | Two laps of a figure-eight (~1.2 m half-width), peaking near 2.5 m/s, yaw following velocity | RMS tracking < 0.10 m | `figure8_3d.png`, `figure8_tracking.png`, `figure8.gif` |
 | `demos/demo_swarm.py` | Nine robots (a nod to the talk's finale): 3x3 grid → ring → "V", then a circle lap in formation | formation RMS < 0.06 m; min pairwise distance > 0.15 m | `swarm_3d.png`, `swarm.gif` |
+| `demos/demo_decentralized.py` | The nine-robot show re-flown decentralized (grid → ring → circle lap): each robot corrects only from relative positions of neighbors within a 1.2 m sensing radius, run centralized vs decentralized vs 30% sensing dropout — the variants agree to sub-millimeter | formation RMS < 0.06 m; min pairwise distance > 0.15 m | `decentralized_3d.png`, `decentralized.gif` |
 
 The numbers above are the *targets* each demo checks itself against; run the demos to see
 the actual figures on your machine.
@@ -141,8 +142,9 @@ quadsim/            core library
   controller.py     geometric SE(3) tracking controller
   sim.py            simulation loop and History logging/metrics
   swarm.py          formation keyframes, optimal assignment, collision avoidance
+  decentralized.py  decentralized formation control from relative sensing (ch08)
   viz.py            3D trajectory plots, tracking panels, GIF animation
-demos/              four runnable demos (write into out/)
+demos/              five runnable demos (write into out/)
 flight/             sim-to-hardware bridge: poly4d trajectory export, preflight checks,
                     Crazyflie flight scripts, and flight-log analysis
 hardware/           parametric OpenSCAD frame (frame.scad), rendered frame.stl,
@@ -156,9 +158,10 @@ docs/               design and learning documentation
   HARDWARE.md       sim-to-real roadmap (Crazyflie levels 0-3)
   LEARNING.md       ECE-to-aerial-robotics learning path anchored to this codebase
   SOURCING_INDIA.md where to buy everything from Delhi/India, plus the drone rules
-  course/           eight-chapter self-study course and the combined Word workbook
+  course/           ten-chapter self-study course and the combined Word workbook
 media/              committed copies of gitignored out/ artifacts (demo GIFs, frame drawing)
-tests/              pytest suite (maths, dynamics, trajectory, controller, swarm)
+tests/              pytest suite (maths, dynamics, trajectory, controller, swarm,
+                    decentralized, flight tooling)
 SPEC.md             the binding interface contract the modules are written against
 ```
 

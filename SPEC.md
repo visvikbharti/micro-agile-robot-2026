@@ -27,7 +27,8 @@ Multiple authors write modules concurrently against this contract.
 - Library import graph (strict): `maths` and `params` at the bottom; `dynamics` imports
   maths/params; `trajectory` imports maths; `controller` imports maths/params/trajectory;
   `sim` imports dynamics/controller/trajectory; `swarm` imports all of the above;
-  `viz` may import matplotlib. Nothing in `quadsim/` imports from `demos/` or `tests/`.
+  `decentralized` imports swarm and everything below it; `viz` may import matplotlib.
+  Nothing in `quadsim/` imports from `demos/` or `tests/`.
 - Allowed third-party deps: numpy, scipy, matplotlib, pillow (viz only). Nothing else.
 - Type hints on all public functions; docstrings on all public API; line width <= 100.
 - No dead code, no TODO comments.
@@ -337,3 +338,65 @@ Common structure for every demo:
   firmware `controller_mellinger.c`, swarm.py → Crazyswarm2). Approximate 2026 USD prices,
   clearly marked approximate. Safety notes (props, LiPo handling, netting like in the video,
   indoor vs outdoor rules).
+
+## quadsim/decentralized.py (ch08 extension)
+
+Decentralized formation control in the style of Turpin, Michael & Kumar (2011), "Trajectory
+design and control for aggressive formation flight with quadrotors". Information model: robot
+i knows its OWN state, the shared leader flat-output plan and the pre-assigned slot offsets
+(implicit coordination — everyone carries the same plan), and ONLY the relative positions
+`x_i - x_j` of neighbors within `R_sense`; no robot reads another robot's absolute state or
+velocity. Honest scope (stated in the module docstring): the control is decentralized, slot
+assignment is still resolved centrally at construction (anonymous assignment is ch05 / CAPT),
+and ground-truth relative positions stand in for onboard relative sensing.
+
+```python
+class DecentralizedSwarmSim(SwarmSim):
+    def __init__(self, params, leader, keyframes, R_sense=1.2, k_form=4.0,
+                 a_form_max=3.0, d_safe=0.30, k_avoid=4.0, a_avoid_max=3.0,
+                 p_drop=0.0, seed=0): ...
+    def run(self, T, dt=0.004, start_offsets=None): ...  # -> List[History]
+```
+
+- Inherits keyframe validation, sequential optimal slot assignment, smoothstep blending and
+  pairwise repulsion from `SwarmSim`. Requires `d_safe <= R_sense` (repulsion also needs only
+  relative positions, so it must act inside the sensing radius) and `0 <= p_drop <= 1`.
+- `formation_accels(positions, t, rng=None)` -> `(n, 3)`: pairwise formation error
+  `e_ij = (x_i - x_j) - (d_i - d_j)` with `d` the blended assigned offsets at `t`; robot i's
+  correction is `-k_form * mean over sensed neighbors of e_ij`, norm-capped at `a_form_max`
+  (default 3.0 m/s^2, matching `a_avoid_max` so both injected terms stay well inside the
+  ~1 g thrust margin); zero when no neighbor is sensed. A neighbor j is sensed when
+  `d_ij <= R_sense` and, if `rng` is given, the directed edge i->j survives a per-step
+  dropout draw with probability `p_drop`.
+- `run` mirrors `SwarmSim.run`, adding the formation correction to the repulsion term in the
+  injected reference acceleration; `ref_p`/`ref_v` are recorded WITHOUT either injected
+  term. `start_offsets` (`(n, 3)`, optional) perturbs the initial hover positions away from
+  the slots. The dropout generator is rebuilt from `seed` on every `run` call, so repeated
+  runs are bit-identical.
+- `relative_formation_errors(histories)` -> `(N,)` per-sample RMS over all pairs of
+  `||e_ij||`: formation SHAPE error, independent of absolute leader tracking.
+- Default `k_form = 4.0` (s^-2) is a quarter of the position-loop stiffness `kp/m = 16 s^-2`
+  (the term adds a relative spring with no extra relative damping, so keep it small).
+
+Demo `demos/demo_decentralized.py` (same flag conventions as the other demos): n = 9,
+`dt = 0.004`, ~11 s: 3x3 grid (0.55 m) at z = 1.2 -> blend to the 9-robot ring (r = 0.9) ->
+leader circle lap (r = 0.7, C^2 smoothstep-ramped as in demo_swarm). `R_sense = 1.2` m,
+~2x the nearest-neighbor slot spacing (0.55 m grid, 0.62 m ring chord): connected through
+the blend, yet local (on the ring only chords 0.62 and 1.16 m are in range, not 1.56 m).
+Runs the SAME scenario three ways — `SwarmSim` (centralized baseline),
+`DecentralizedSwarmSim`, and decentralized with `p_drop = 0.3` — and prints per-variant
+`steady_formation_rms_m`, `max_formation_error_m`, `min_pairwise_distance_m`,
+`relative_rms_m` lines (error metrics at 6 decimals: the centralized-vs-decentralized gap
+is sub-millimeter by design). Targets: steady RMS < 0.06 m, min pairwise distance > 0.15 m.
+Outputs: `decentralized_3d.png`, `decentralized.gif`. `--fast`: 6 s, grid -> ring only,
+leader hovers, skip GIF.
+
+Test contract `tests/test_decentralized.py`: (1) full connectivity (n = 4, perturbed
+starts): terminal formation error < 0.02 m and terminal relative error < 0.01 m; (2)
+`R_sense` below the 0.707 m slot spacing disconnects the sensing graph (zero corrective
+accel at nominal spacing) and the mean relative error over the transient exceeds the
+connected run's by a factor > 1.15 (empirically 0.114 vs 0.088 m, ratio 1.31); (3)
+corrective acceleration is exactly zero when the formation is exact, including mid-blend;
+(4) two runs with the same dropout seed are bit-identical and a different seed measurably
+differs; (5) the demo's grid -> ring scenario (n = 9, `R_sense = 1.2`) keeps min pairwise
+distance > 0.15 m.

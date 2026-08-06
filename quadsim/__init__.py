@@ -22,6 +22,7 @@ _EXPORTS = {
     "simulate": "quadsim.sim",
     "FormationKeyframe": "quadsim.swarm",
     "SwarmSim": "quadsim.swarm",
+    "DecentralizedSwarmSim": "quadsim.decentralized",
 }
 
 __all__ = sorted(_EXPORTS) + ["__version__"]
