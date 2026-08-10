@@ -4,3 +4,5 @@ __pycache__/
 *.egg-info/
 out/
 .pytest_cache/
+.venv-mj/
+.DS_Store

@@ -77,6 +77,9 @@ reason), and writes its plots and GIFs into `out/`. Useful flags for every demo:
 - `--show` — open interactive matplotlib windows instead of headless rendering
 - `--out DIR` — write outputs somewhere other than `out/`
 
+(`demos/demo_mujoco.py` renders MP4 videos rather than GIFs, so it takes `--no-video` in
+place of `--no-gif`.)
+
 ## Demos
 
 | Demo | What it shows | Target (from SPEC) | Outputs in `out/` |
@@ -86,6 +89,7 @@ reason), and writes its plots and GIFs into `out/`. Useful flags for every demo:
 | `demos/demo_figure8.py` | Two laps of a figure-eight (~1.2 m half-width), peaking near 2.5 m/s, yaw following velocity | RMS tracking < 0.10 m | `figure8_3d.png`, `figure8_tracking.png`, `figure8.gif` |
 | `demos/demo_swarm.py` | Nine robots (a nod to the talk's finale): 3x3 grid → ring → "V", then a circle lap in formation | formation RMS < 0.06 m; min pairwise distance > 0.15 m | `swarm_3d.png`, `swarm.gif` |
 | `demos/demo_decentralized.py` | The nine-robot show re-flown decentralized (grid → ring → circle lap): each robot corrects only from relative positions of neighbors within a 1.2 m sensing radius, run centralized vs decentralized vs 30% sensing dropout — the variants agree to sub-millimeter | formation RMS < 0.06 m; min pairwise distance > 0.15 m | `decentralized_3d.png`, `decentralized.gif` |
+| `demos/demo_mujoco.py` | Cross-engine validation: the hover and figure-eight flights re-flown inside [MuJoCo](https://mujoco.org) with the same params/controller, rendered with the 3D-printed frame mesh (needs `pip install -e ".[mujoco]"`; arm64 Python on Apple silicon — see `docs/MUJOCO.md`) | MuJoCo RMS < 0.10 m; engine-vs-engine divergence RMS < 0.08 m (measured ~0.0004 m) | `mujoco_fig8_tracking.png`, `mujoco_divergence.png`, `mujoco_fig8.mp4`, `mujoco_hover.mp4` |
 
 The numbers above are the *targets* each demo checks itself against; run the demos to see
 the actual figures on your machine.

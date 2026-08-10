@@ -27,9 +27,12 @@ Multiple authors write modules concurrently against this contract.
 - Library import graph (strict): `maths` and `params` at the bottom; `dynamics` imports
   maths/params; `trajectory` imports maths; `controller` imports maths/params/trajectory;
   `sim` imports dynamics/controller/trajectory; `swarm` imports all of the above;
-  `decentralized` imports swarm and everything below it; `viz` may import matplotlib.
-  Nothing in `quadsim/` imports from `demos/` or `tests/`.
-- Allowed third-party deps: numpy, scipy, matplotlib, pillow (viz only). Nothing else.
+  `decentralized` imports swarm and everything below it; `viz` may import matplotlib;
+  `mujoco_bridge` (optional extension, never imported by `__init__` or any core module)
+  imports maths/params/dynamics/sim. Nothing in `quadsim/` imports from `demos/` or `tests/`.
+- Allowed third-party deps: numpy, scipy, matplotlib, pillow (viz only). Nothing else in the
+  core. The optional `mujoco` extra additionally allows mujoco and imageio, confined to
+  `mujoco_bridge` (which the base install must never need).
 - Type hints on all public functions; docstrings on all public API; line width <= 100.
 - No dead code, no TODO comments.
 
@@ -400,3 +403,59 @@ corrective acceleration is exactly zero when the formation is exact, including m
 (4) two runs with the same dropout seed are bit-identical and a different seed measurably
 differs; (5) the demo's grid -> ring scenario (n = 9, `R_sense = 1.2`) keeps min pairwise
 distance > 0.15 m.
+
+## quadsim/mujoco_bridge.py (cross-engine validation extension)
+
+Optional module (requires the `mujoco` extra; NOT imported by `quadsim/__init__.py`, so the
+base install stays MuJoCo-free). Rebuilds the SAME vehicle inside MuJoCo — mass, inertia,
+X-mixer rotor geometry (`d = L / sqrt(2)`, sites r1..r4 with the exact `dynamics.py`
+positions and spin signs), drag-torque coefficient (actuator gear `[0 0 1 0 0 -+c_tau]` per
+rotor, site transmission), per-motor `ctrlrange = [f_motor_min, f_motor_max]`, gravity, RK4,
+zero air density — and flies unmodified quadsim controllers in it. Sim-to-sim validation:
+agreement between engines is evidence against derivation/integrator errors.
+
+```python
+def quad_mjcf(params, mesh_path=None, timestep=5e-4, start_z=1.0) -> str
+class MujocoQuadSim:
+    def __init__(self, params, mesh_path=None, timestep=5e-4): ...
+    def reset(self, state: QuadState) -> None
+    def state(self) -> QuadState
+    def apply(self, f, tau) -> tuple[float, np.ndarray]   # mix -> ctrl; returns saturated wrench
+    def step(self, dt) -> None                            # integer substeps, ZOH
+def simulate_mujoco(params, controller, ref_fn, state0, T, dt=0.002,
+                    mesh_path=None, timestep=5e-4) -> History
+def render_history(hist, params, save, mesh_path=None, fps=50,
+                   width=960, height=544, camera="track") -> str
+```
+
+- State conventions coincide with quadsim (test-verified): free-joint `qpos = [p, quat wxyz]`,
+  `qvel[0:3]` world-frame linear, `qvel[3:6]` BODY-frame angular velocity.
+- Thrust allocation reuses `QuadrotorDynamics.mix`, so saturation is bit-identical;
+  `simulate_mujoco` mirrors `sim.simulate` (loop order, sample times, recorded post-saturation
+  wrench) and returns the same `History`. `step(dt)` requires `dt` to be a positive integer
+  multiple of `timestep` (ValueError otherwise — silent rounding would skew the physics clock
+  against the reference clock). `render_history` raises ValueError on an empty `History` or
+  when `width`/`height` exceed the model's 1280x720 offscreen framebuffer, and always renders
+  at least one frame for a non-empty `History`.
+- Inertia: the catalog `J` violates the rigid-body triangle inequality (`Jx + Jy >= Jz`);
+  the builder applies the minimal projection `Jz <- min(Jz, Jx + Jy)` (~1%, yaw axis only)
+  and documents it. quadsim keeps the catalog values — a small deliberate model mismatch.
+- `mesh_path` (binary STL, millimeters, e.g. `out/frame_binary.stl`) is visual-only;
+  collision is a hub sphere against a ground plane. No printing anywhere in the module.
+
+Demo `demos/demo_mujoco.py` (same flag conventions): hover recovery (0.15 m offset, 3 s) and
+the demo_figure8 lemniscate (2 laps; `--fast` 1 lap, no videos), each run in BOTH engines with
+identical gains/reference/dt; prints per-engine RMS, cross-engine divergence RMS/max, peak
+speed. Targets: MuJoCo rms < 0.10 m, divergence RMS < 0.08 m (measured on the default 2-lap
+run: divergence RMS ~0.0004 m; the demo's exit code is 1 when either target is exceeded 5x).
+`--no-video` replaces the other demos' `--no-gif` (the outputs are MP4s). Outputs:
+`mujoco_fig8_tracking.png`, `mujoco_divergence.png`, `mujoco_fig8.mp4`, `mujoco_hover.mp4`.
+
+Test contract `tests/test_mujoco_bridge.py` (skips without `mujoco`): (1) model mass/inertia/
+actuator ranges match params (with the documented Jz projection); (2) free fall matches
+`-g e3` to 1e-9; (3) open-loop hover thrust holds position to 1e-6 m over 1 s; (4) an
+asymmetric motor pattern produces exactly the `A`-matrix wrench (`qacc` vs `J^-1 A u`,
+rtol 1e-6); (5) closed-loop SE(3) hover recovery settles (RMS last second < 5 mm); (6) the
+1-lap figure-eight agrees across engines: `|rms_mj - rms_qs| < 0.03` m and divergence RMS
+< 0.08 m; (7) `step` raises on a non-divisor `dt`, the mesh-less fallback arms are rotated a
+true 45 degrees, and `render_history` raises on empty input / oversize frames.

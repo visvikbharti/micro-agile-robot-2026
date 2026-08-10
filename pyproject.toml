@@ -17,6 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest"]
 flight = ["cflib"]
+mujoco = ["mujoco>=3.2", "imageio", "imageio-ffmpeg"]
 
 [tool.setuptools]
 packages = ["quadsim"]
