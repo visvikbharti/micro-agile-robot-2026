@@ -58,29 +58,51 @@ Outputs land in `out/`: `mujoco_fig8.mp4` and `mujoco_hover.mp4` (the printed fr
 tracking camera), `mujoco_fig8_tracking.png`, `mujoco_divergence.png`.
 The base venv's test suite simply skips the MuJoCo tests.
 
-To fly it **live and interactively** (drag the camera while it flies), MuJoCo on macOS
-requires its `mjpython` launcher:
+## Flying it live (the fun part)
+
+`demos/fly_mujoco_live.py` opens the interactive viewer with the SE(3) controller flying
+closed-loop in real time. Orbit the camera, **grab the vehicle mid-flight** (double-click
+the body, then Ctrl+drag applies a force, Ctrl+right-drag a torque) and watch the
+controller fight back. Every hyperparameter is a flag, so each experiment is one re-run
+(macOS requires MuJoCo's `mjpython` launcher for the viewer):
 
 ```bash
-.venv-mj/bin/mjpython -c "
-import mujoco, mujoco.viewer, numpy as np
-from quadsim.mujoco_bridge import MujocoQuadSim
-from quadsim.controller import SE3Controller
-from quadsim.dynamics import QuadState
-from quadsim.params import QuadParams
-from quadsim.trajectory import hover_ref
-import time
-params = QuadParams()
-world = MujocoQuadSim(params, mesh_path='out/frame_binary.stl')
-world.reset(QuadState.hover(np.array([0.2, -0.2, 0.4])))
-ctl, ref, t = SE3Controller(params), hover_ref(np.array([0, 0, 1.0])), 0.0
-with mujoco.viewer.launch_passive(world.model, world.data) as v:
-    while v.is_running():
-        f, tau = ctl.compute(world.state(), ref, t)
-        world.apply(f, tau); world.step(0.002); t += 0.002
-        v.sync(); time.sleep(0.002)
-"
+.venv-mj/bin/mjpython demos/fly_mujoco_live.py                    # fig8, stock gains
+.venv-mj/bin/mjpython demos/fly_mujoco_live.py --traj hover       # hover recovery
+.venv-mj/bin/mjpython demos/fly_mujoco_live.py --time-scale 0.25  # 4x slow motion
 ```
+
+A hyperparameter playbook — run each and watch what changes:
+
+| Run | What you'll see | The physics lesson |
+| --- | --- | --- |
+| `--kp 0.25` | corners cut wide, lazy return after a yank | position stiffness sets how hard errors are pulled to zero |
+| `--kv 3.0` | overdamped crawl, no overshoot | velocity gain is damping; too much and it fights the reference |
+| `--kR 0.1` | wobble → tumble → crash into the (real) floor | the attitude loop must be much faster than the position loop that commands it |
+| `--kw 0.2` | oscillating attitude, ringing | body-rate damping is what stops the inner loop ringing |
+| `--avg-speed 4.5` | tracking falls apart at the crossover | the 0.16 N/motor ceiling saturates — agility is an actuator budget |
+| `--time-scale 0.25` | nose visibly leading the turn | yaw feedforward from the trajectory's velocity direction |
+
+The tracking error prints every 2 s, so gain changes turn into numbers as well as motion.
+
+## The MuJoCo app (GUI, sliders, no controller)
+
+The MuJoCo desktop app you installed is the raw physics workbench: export our model and
+open it there —
+
+```bash
+.venv-mj/bin/python demos/fly_mujoco_live.py --export-xml out/quad_mujoco.xml
+```
+
+then drag `out/quad_mujoco.xml` onto the app window. You get per-motor thrust sliders
+(Control pane), pause/step/slow-mo, force visualization, and every physics option
+(gravity, timestep, integrator) editable live. There is deliberately **no controller** in
+the app — which is itself the best lesson in the repo: load the `hover` keyframe
+(Simulation pane; it sets all four motors to the exact hover thrust, 0.0809 N) and watch
+the quad still tip over within seconds. Open-loop hover is unstable; the SE(3) controller
+closing the loop 500 times a second is the difference between that and the figure-eight.
+Nudge one slider up 5% and watch the reaction torque yaw it — that's the `c_tau` term in
+the mixer.
 
 ## Where this goes next
 

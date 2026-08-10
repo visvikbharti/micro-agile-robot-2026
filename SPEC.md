@@ -451,6 +451,12 @@ run: divergence RMS ~0.0004 m; the demo's exit code is 1 when either target is e
 `--no-video` replaces the other demos' `--no-gif` (the outputs are MP4s). Outputs:
 `mujoco_fig8_tracking.png`, `mujoco_divergence.png`, `mujoco_fig8.mp4`, `mujoco_hover.mp4`.
 
+Companion `demos/fly_mujoco_live.py` (interactive; not a test target): real-time closed-loop
+flight in the MuJoCo viewer (`mjpython` on macOS) with gain/speed/time-scale flags for
+hyperparameter experiments, viewer-perturbation recovery, a 2 s tracking-error printout, and
+`--export-xml PATH` which writes the MJCF (plus a `hover` keyframe at exact per-motor hover
+thrust) for the MuJoCo desktop app's slider/parameter GUI.
+
 Test contract `tests/test_mujoco_bridge.py` (skips without `mujoco`): (1) model mass/inertia/
 actuator ranges match params (with the documented Jz projection); (2) free fall matches
 `-g e3` to 1e-9; (3) open-loop hover thrust holds position to 1e-6 m over 1 s; (4) an

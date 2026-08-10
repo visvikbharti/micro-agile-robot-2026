@@ -78,7 +78,9 @@ reason), and writes its plots and GIFs into `out/`. Useful flags for every demo:
 - `--out DIR` — write outputs somewhere other than `out/`
 
 (`demos/demo_mujoco.py` renders MP4 videos rather than GIFs, so it takes `--no-video` in
-place of `--no-gif`.)
+place of `--no-gif`. Its interactive sibling `demos/fly_mujoco_live.py` flies the controller
+live in the MuJoCo viewer with gain/speed knobs — see `docs/MUJOCO.md` for the
+hyperparameter playbook and the MuJoCo-app export.)
 
 ## Demos
 
